@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Convert scale benchmark output into data files."""
 
 import sys
 import re
@@ -11,16 +12,6 @@ import pandas as pd
 def parse_raw(lines):
     fs = None
     data = []
-
-    def get_bench_data(pattern, line):
-        m = re.match(pattern, line)
-        if m:
-            return {
-                "fs": fs,
-                "bench": m.group("bench"),
-                "val": float(m.group("val")),
-            }
-        return None
 
     for line in lines:
         if re.match(r"""^#""", line):
