@@ -78,7 +78,7 @@ func (op *FsTxn) ReleaseInode(ip *inode.Inode) {
 	op.Fs.Lockmap.Release(ip.Inum)
 }
 
-func (op *FsTxn) LockInode(inum common.Inum) *cache.Cslot {
+func (op *FsTxn) LockInode(inum common.Inum) *cache.Cslot[*inode.Inode] {
 	op.Fs.Lockmap.Acquire(inum)
 	cslot := op.Fs.Icache.LookupSlot(uint64(inum))
 	if cslot == nil {
@@ -96,7 +96,7 @@ func (op *FsTxn) GetInodeLocked(inum common.Inum) *inode.Inode {
 		util.DPrintf(1, "GetInodeLocked # %v: read inode from disk\n", inum)
 		cslot.Obj = i
 	}
-	ip := cslot.Obj.(*inode.Inode)
+	ip := cslot.Obj
 	op.addInode(ip)
 	util.DPrintf(1, "%p: GetInodeLocked %v\n", op.Atxn.Id(), ip)
 	return ip
