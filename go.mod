@@ -1,6 +1,6 @@
 module github.com/mit-pdos/go-nfsd
 
-go 1.22
+go 1.23
 
 require (
 	github.com/goose-lang/goose v0.7.1

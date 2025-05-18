@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/mit-pdos/go-nfsd/actions/workflows/build.yml/badge.svg)](https://github.com/mit-pdos/go-nfsd/actions/workflows/build.yml)
 
+This repository requires **Go 1.23** or later to build.
+
 An NFSv3 server that uses [GoJournal](https://github.com/mit-pdos/go-journal) to
 write operations atomically to disk. Unlike many other NFS servers, GoNFS
 implements the file-system abstraction on top of a disk (which can be any file,
