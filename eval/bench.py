@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Utilities for aggregating benchmark output into tidy data files."""
 
 import sys
 import re
@@ -89,10 +90,10 @@ def main():
         columns.extend(["linux-ssd", "gonfs-ssd"])
         if "fscq-ssd" in df.columns:
             columns.append("fscq-ssd")
-    df.to_csv(join(args.output, "bench.data"), sep="\t", columns=columns),
+    df.to_csv(join(args.output, "bench.data"), sep="\t", columns=columns)
 
     df = largefile_from_tidy(tidy_df)
-    df.to_csv(join(args.output, "largefile.data"), sep="\t"),
+    df.to_csv(join(args.output, "largefile.data"), sep="\t")
 
 
 if __name__ == "__main__":

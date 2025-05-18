@@ -55,7 +55,7 @@ sudo tshark -i lo -f tcp -w $TMP/gonfs-smallfile.pcap &
 sleep 1
 sudo killall tshark
 sleep 1
-sudo tshark -Tfields -e 'nfs.procedure_v3' -e 'rpc.time' -r $TMP/gonfs-smallfile.pcap '(nfs && rpc.time)' | ./eval/aggregate-times.py | tee -a $DATA_PATH/gonfs-latencies-tcp.txt
+sudo tshark -Tfields -e 'nfs.procedure_v3' -e 'rpc.time' -r $TMP/gonfs-smallfile.pcap '(nfs && rpc.time)' | ./eval/aggregate_times.py | tee -a $DATA_PATH/gonfs-latencies-tcp.txt
 
 info "GoNFS (null)"
 echo "#GoNFS (null)" >>$DATA_PATH/gonfs-latencies-tcp.txt
@@ -64,7 +64,7 @@ sudo tshark -i lo -f tcp -w $TMP/gonfs-null.pcap &
 sleep 1
 sudo killall tshark
 sleep 1
-sudo tshark -Tfields -e 'nfs.procedure_v3' -e 'rpc.time' -r $TMP/gonfs-null.pcap '(nfs && rpc.time)' | ./eval/aggregate-times.py | tee -a $DATA_PATH/gonfs-latencies-tcp.txt
+sudo tshark -Tfields -e 'nfs.procedure_v3' -e 'rpc.time' -r $TMP/gonfs-null.pcap '(nfs && rpc.time)' | ./eval/aggregate_times.py | tee -a $DATA_PATH/gonfs-latencies-tcp.txt
 
 info "\n\nResults: "
 cat eval/data/gonfs-latencies-tcp.txt
@@ -77,7 +77,7 @@ sudo tshark -i lo -f tcp -w $TMP/linux-smallfile.pcap &
 sleep 1
 sudo killall tshark
 sleep 1
-sudo tshark -Tfields -e 'nfs.procedure_v3' -e 'rpc.time' -r $TMP/linux-smallfile.pcap '(nfs && rpc.time)' | ./eval/aggregate-times.py | tee -a $DATA_PATH/linux-latencies-tcp.txt
+sudo tshark -Tfields -e 'nfs.procedure_v3' -e 'rpc.time' -r $TMP/linux-smallfile.pcap '(nfs && rpc.time)' | ./eval/aggregate_times.py | tee -a $DATA_PATH/linux-latencies-tcp.txt
 
 echo 1>&2
 info "Linux ext4 over NFS (null)"
@@ -87,7 +87,7 @@ sudo tshark -i lo -f tcp -w $TMP/linux-null.pcap &
 sleep 1
 sudo killall tshark
 sleep 1
-sudo tshark -Tfields -e 'nfs.procedure_v3' -e 'rpc.time' -r $TMP/linux-null.pcap '(nfs && rpc.time)' | ./eval/aggregate-times.py | tee -a $DATA_PATH/linux-latencies-tcp.txt
+sudo tshark -Tfields -e 'nfs.procedure_v3' -e 'rpc.time' -r $TMP/linux-null.pcap '(nfs && rpc.time)' | ./eval/aggregate_times.py | tee -a $DATA_PATH/linux-latencies-tcp.txt
 
 info "\n\nResults: "
 cat eval/data/linux-latencies-tcp.txt
