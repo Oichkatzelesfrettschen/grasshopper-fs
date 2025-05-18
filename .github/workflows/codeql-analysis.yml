@@ -1,0 +1,64 @@
+name: codeql-multilang
+
+on:
+  push:
+    branches: [main, release/**]
+  pull_request:
+    branches: [main, release/**]
+  schedule:
+    - cron: '25 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+env:
+  BUNDLE_ARTIFACT: codeql-custom-bundle.tgz
+
+jobs:
+  build-bundle:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build CodeQL bundle
+      uses: advanced-security/codeql-bundle-action@v2
+      with:
+        packs: |
+          codeql/javascript-queries@latest
+          codeql/cpp-queries@latest
+          my-org/my-extra-python-pack@~1.4
+        output: ${{ env.BUNDLE_ARTIFACT }}
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.BUNDLE_ARTIFACT }}
+        path: ${{ env.BUNDLE_ARTIFACT }}
+        retention-days: 5
+
+  codeql-scan:
+    needs: build-bundle
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lang: "go"
+          - lang: "python"
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/download-artifact@v4
+      with:
+        name: ${{ env.BUNDLE_ARTIFACT }}
+    - name: Initialise CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.lang }}
+        config-file: .github/codeql/codeql-config.yml
+        tools: ${{ env.BUNDLE_ARTIFACT }}
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{ matrix.lang }}"
+        output: sarif
