@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Process tshark NFS traces to compute per-procedure latencies."""
 
 # aggregate the results of running tshark over an NFS packet capture
 #
@@ -6,7 +7,7 @@
 # tshark -i lo -f tcp -w nfs.pcap
 #
 # then process with
-# tshark -Tfields -e 'nfs.procedure_v3' -e 'rpc.time' -r nfs.pcap '(nfs && rpc.time)' | ./aggregate-times.py
+# tshark -Tfields -e 'nfs.procedure_v3' -e 'rpc.time' -r nfs.pcap '(nfs && rpc.time)' | ./aggregate_times.py
 #
 # note that running tshark over a trace takes a while
 

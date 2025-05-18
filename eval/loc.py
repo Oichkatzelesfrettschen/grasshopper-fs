@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Generate line-of-code statistics across related projects."""
 
 # Produce data for figures 14 and 15 (lines of code).
 #
@@ -286,7 +287,7 @@ if __name__ == "__main__":
         print("Lines of code for GoJournal and SimpleNFS")
         print(impl_df.to_string(index=False))
     else:
-        with open(join(args.latex, "perennial-loc.tex"), "w") as f:
+        with open(join(args.latex, "perennial-loc.tex"), "w", encoding="utf-8") as f:
             print(perennial_to_latex(perennial_df), file=f)
-        with open(join(args.latex, "impl-loc.tex"), "w") as f:
+        with open(join(args.latex, "impl-loc.tex"), "w", encoding="utf-8") as f:
             print(impl_to_latex(impl_df), file=f)
