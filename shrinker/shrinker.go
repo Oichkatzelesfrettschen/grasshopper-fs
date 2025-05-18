@@ -8,6 +8,7 @@ import (
 	"github.com/mit-pdos/go-nfsd/fstxn"
 )
 
+// ShrinkerSt manages background inode shrinking threads.
 type ShrinkerSt struct {
 	mu       *sync.Mutex
 	condShut *sync.Cond
@@ -16,6 +17,7 @@ type ShrinkerSt struct {
 	crash    bool
 }
 
+// MkShrinkerSt allocates a new shrinker state.
 func MkShrinkerSt(st *fstxn.FsState) *ShrinkerSt {
 	mu := new(sync.Mutex)
 	shrinkst := &ShrinkerSt{
@@ -28,6 +30,7 @@ func MkShrinkerSt(st *fstxn.FsState) *ShrinkerSt {
 	return shrinkst
 }
 
+// crashed reports whether the shrinker has been crashed.
 func (shrinkst *ShrinkerSt) crashed() bool {
 	shrinkst.mu.Lock()
 	crashed := shrinkst.crash
@@ -38,6 +41,7 @@ func (shrinkst *ShrinkerSt) crashed() bool {
 // If caller changes file size and shrinking is in progress (because
 // an earlier call truncated the file), then help/wait with/for
 // shrinking.  Also, called by shrinker.
+// DoShrink performs the actual shrinking of the given inode.
 func (shrinkst *ShrinkerSt) DoShrink(inum common.Inum) bool {
 	var more = true
 	var ok = true
@@ -60,6 +64,7 @@ func (shrinkst *ShrinkerSt) DoShrink(inum common.Inum) bool {
 	return ok
 }
 
+// Shutdown waits for all shrinker threads to finish.
 func (shrinker *ShrinkerSt) Shutdown() {
 	shrinker.mu.Lock()
 	for shrinker.nthread > 0 {
@@ -69,6 +74,7 @@ func (shrinker *ShrinkerSt) Shutdown() {
 	shrinker.mu.Unlock()
 }
 
+// Crash stops all shrinker threads without waiting for completion.
 func (shrinker *ShrinkerSt) Crash() {
 	shrinker.mu.Lock()
 	shrinker.crash = true
@@ -79,7 +85,7 @@ func (shrinker *ShrinkerSt) Crash() {
 	shrinker.mu.Unlock()
 }
 
-// for large files, start a separate thread
+// StartShrinker launches a goroutine to shrink a large file.
 func (shrinkst *ShrinkerSt) StartShrinker(inum common.Inum) {
 	util.DPrintf(1, "start shrink thread\n")
 	shrinkst.mu.Lock()
@@ -88,6 +94,7 @@ func (shrinkst *ShrinkerSt) StartShrinker(inum common.Inum) {
 	go func() { shrinkst.shrinker(inum) }()
 }
 
+// shrinker is the goroutine body that frees blocks.
 func (shrinkst *ShrinkerSt) shrinker(inum common.Inum) {
 	ok := shrinkst.DoShrink(inum)
 	if !ok {

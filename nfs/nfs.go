@@ -15,6 +15,7 @@ import (
 	"github.com/mit-pdos/go-nfsd/util/stats"
 )
 
+// Nfs provides the main NFS server state and helper threads.
 type Nfs struct {
 	fsstate  *fstxn.FsState
 	shrinkst *shrinker.ShrinkerSt
@@ -24,6 +25,7 @@ type Nfs struct {
 	stats [NUM_NFS_OPS]stats.Op
 }
 
+// MakeNfs initializes a new NFS server backed by disk d.
 func MakeNfs(d disk.Disk) *Nfs {
 	// run first so that disk is initialized before mkLog
 	super := super.MkFsSuper(d)
@@ -51,6 +53,7 @@ func MakeNfs(d disk.Disk) *Nfs {
 	return nfs
 }
 
+// ShutdownNfs cleanly shuts down the server and background threads.
 func (nfs *Nfs) ShutdownNfs() {
 	util.DPrintf(1, "Shutdown\n")
 	nfs.shrinkst.Shutdown()
@@ -58,7 +61,7 @@ func (nfs *Nfs) ShutdownNfs() {
 	util.DPrintf(1, "Shutdown done\n")
 }
 
-// Terminates shrinker thread immediately
+// Crash terminates the shrinker and shuts down without waiting.
 func (nfs *Nfs) Crash() {
 	util.DPrintf(0, "Crash: terminate shrinker\n")
 	nfs.shrinkst.Crash()

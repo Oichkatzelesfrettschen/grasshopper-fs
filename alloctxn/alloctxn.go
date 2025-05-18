@@ -27,6 +27,7 @@ type AllocTxn struct {
 	freeBnums  []common.Bnum
 }
 
+// Begin starts a new allocation transaction.
 func Begin(super *super.FsSuper, log *obj.Log, balloc *alloc.Alloc, ialloc *alloc.Alloc) *AllocTxn {
 	atxn := &AllocTxn{
 		Super:      super,
@@ -46,6 +47,7 @@ func (atxn *AllocTxn) Id() *jrnl.Op {
 	return atxn.Op
 }
 
+// AllocINum allocates a free inode number.
 func (atxn *AllocTxn) AllocINum() common.Inum {
 	inum := common.Inum(atxn.Ialloc.AllocNum())
 	util.DPrintf(1, "AllocINum -> # %v\n", inum)
@@ -55,11 +57,13 @@ func (atxn *AllocTxn) AllocINum() common.Inum {
 	return inum
 }
 
+// FreeINum schedules an inode number to be freed on commit.
 func (atxn *AllocTxn) FreeINum(inum common.Inum) {
 	util.DPrintf(1, "FreeINum -> # %v\n", inum)
 	atxn.freeInums = append(atxn.freeInums, inum)
 }
 
+// WriteBits updates bitmap bits for allocation status.
 func (atxn *AllocTxn) WriteBits(nums []uint64, blk uint64, alloc bool) {
 	for _, n := range nums {
 		a := addr.MkBitAddr(blk, n)
@@ -109,6 +113,7 @@ func (atxn *AllocTxn) PostAbort() {
 	}
 }
 
+// AssertValidBlock checks that blkno is within the valid data range.
 func (atxn *AllocTxn) AssertValidBlock(blkno common.Bnum) {
 	if blkno > 0 && (blkno < atxn.Super.DataStart() ||
 		blkno >= atxn.Super.MaxBnum()) {
@@ -117,6 +122,7 @@ func (atxn *AllocTxn) AssertValidBlock(blkno common.Bnum) {
 	}
 }
 
+// AllocBlock allocates a free disk block.
 func (atxn *AllocTxn) AllocBlock() common.Bnum {
 	util.DPrintf(5, "alloc block\n")
 	bn := common.Bnum(atxn.Balloc.AllocNum())
@@ -128,6 +134,7 @@ func (atxn *AllocTxn) AllocBlock() common.Bnum {
 	return bn
 }
 
+// FreeBlock schedules a block to be freed on commit.
 func (atxn *AllocTxn) FreeBlock(blkno common.Bnum) {
 	util.DPrintf(1, "free block %v\n", blkno)
 	atxn.AssertValidBlock(blkno)
@@ -138,6 +145,7 @@ func (atxn *AllocTxn) FreeBlock(blkno common.Bnum) {
 	atxn.freeBnums = append(atxn.freeBnums, blkno)
 }
 
+// ReadBlock loads a block for read or modification.
 func (atxn *AllocTxn) ReadBlock(blkno common.Bnum) *buf.Buf {
 	util.DPrintf(5, "ReadBlock %d\n", blkno)
 	atxn.AssertValidBlock(blkno)
@@ -145,6 +153,7 @@ func (atxn *AllocTxn) ReadBlock(blkno common.Bnum) *buf.Buf {
 	return atxn.Op.ReadBuf(addr, common.NBITBLOCK)
 }
 
+// ZeroBlock zeros the specified block within the transaction.
 func (atxn *AllocTxn) ZeroBlock(blkno common.Bnum) {
 	util.DPrintf(5, "zero block %d\n", blkno)
 	buf := atxn.ReadBlock(blkno)

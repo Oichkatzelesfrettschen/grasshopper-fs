@@ -9,6 +9,7 @@ import (
 	"github.com/mit-pdos/go-nfsd/nfstypes"
 )
 
+// Ls3 lists directory entries with attributes and handles.
 func Ls3(dip *inode.Inode, op *fstxn.FsTxn, start nfstypes.Cookie3, dircount, maxcount nfstypes.Count3) nfstypes.Dirlistplus3 {
 	var lst *nfstypes.Entryplus3
 	var last *nfstypes.Entryplus3
@@ -44,6 +45,7 @@ func Ls3(dip *inode.Inode, op *fstxn.FsTxn, start nfstypes.Cookie3, dircount, ma
 	return dl
 }
 
+// Readdir3 returns directory entries without additional attributes.
 func Readdir3(dip *inode.Inode, op *fstxn.FsTxn,
 	start nfstypes.Cookie3, count nfstypes.Count3) nfstypes.Dirlist3 {
 	var lst *nfstypes.Entry3
