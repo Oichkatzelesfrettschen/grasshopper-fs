@@ -26,6 +26,7 @@ const (
 	NINDLEVEL uint64 = 2                  // # levels of indirection
 )
 
+// Inode represents an on-disk inode with some in-memory metadata.
 type Inode struct {
 	// in-memory info:
 	Inum   common.Inum

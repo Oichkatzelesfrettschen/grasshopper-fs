@@ -38,10 +38,12 @@ func commitReply(op *fstxn.FsTxn, status *nfstypes.Nfsstat3) {
 	}
 }
 
+// NFSPROC3_NULL implements the NFSv3 _NULL RPC.
 func (nfs *Nfs) NFSPROC3_NULL() {
 	util.DPrintf(1, "NFS Null\n")
 }
 
+// NFSPROC3_GETATTR implements the NFSv3 _GETATTR RPC.
 func (nfs *Nfs) NFSPROC3_GETATTR(args nfstypes.GETATTR3args) nfstypes.GETATTR3res {
 	defer nfs.recordOp(nfstypes.NFSPROC3_GETATTR, time.Now())
 	var reply nfstypes.GETATTR3res
@@ -87,6 +89,7 @@ func (nfs *Nfs) getShrink(fh nfstypes.Nfs_fh3) (*fstxn.FsTxn, *inode.Inode, nfst
 	return op, ip, err
 }
 
+// NFSPROC3_SETATTR implements the NFSv3 _SETATTR RPC.
 func (nfs *Nfs) NFSPROC3_SETATTR(args nfstypes.SETATTR3args) nfstypes.SETATTR3res {
 	defer nfs.recordOp(nfstypes.NFSPROC3_SETATTR, time.Now())
 	var reply nfstypes.SETATTR3res
@@ -203,6 +206,7 @@ func (nfs *Nfs) getInodesLocked(dfh nfstypes.Nfs_fh3, name nfstypes.Filename3) (
 }
 
 // Lookup must lock child inode to find gen number
+// NFSPROC3_LOOKUP implements the NFSv3 _LOOKUP RPC.
 func (nfs *Nfs) NFSPROC3_LOOKUP(args nfstypes.LOOKUP3args) nfstypes.LOOKUP3res {
 	defer nfs.recordOp(nfstypes.NFSPROC3_LOOKUP, time.Now())
 	var reply nfstypes.LOOKUP3res
@@ -222,6 +226,7 @@ func (nfs *Nfs) NFSPROC3_LOOKUP(args nfstypes.LOOKUP3args) nfstypes.LOOKUP3res {
 	return reply
 }
 
+// NFSPROC3_ACCESS implements the NFSv3 _ACCESS RPC.
 func (nfs *Nfs) NFSPROC3_ACCESS(args nfstypes.ACCESS3args) nfstypes.ACCESS3res {
 	defer nfs.recordOp(nfstypes.NFSPROC3_ACCESS, time.Now())
 	var reply nfstypes.ACCESS3res
@@ -248,6 +253,7 @@ func (nfs *Nfs) doRead(fh nfstypes.Nfs_fh3, kind nfstypes.Ftype3, offset, count 
 	return op, data, eof, nfstypes.NFS3_OK
 }
 
+// NFSPROC3_READ implements the NFSv3 _READ RPC.
 func (nfs *Nfs) NFSPROC3_READ(args nfstypes.READ3args) nfstypes.READ3res {
 	defer nfs.recordOp(nfstypes.NFSPROC3_READ, time.Now())
 	var reply nfstypes.READ3res
@@ -266,6 +272,7 @@ func (nfs *Nfs) NFSPROC3_READ(args nfstypes.READ3args) nfstypes.READ3res {
 }
 
 // XXX Mtime
+// NFSPROC3_WRITE implements the NFSv3 _WRITE RPC.
 func (nfs *Nfs) NFSPROC3_WRITE(args nfstypes.WRITE3args) nfstypes.WRITE3res {
 	defer nfs.recordOp(nfstypes.NFSPROC3_WRITE, time.Now())
 	var reply nfstypes.WRITE3res
@@ -429,6 +436,7 @@ func (nfs *Nfs) doCreate(dfh nfstypes.Nfs_fh3, name nfstypes.Filename3, kind nfs
 	return
 }
 
+// NFSPROC3_CREATE implements the NFSv3 _CREATE RPC.
 func (nfs *Nfs) NFSPROC3_CREATE(args nfstypes.CREATE3args) nfstypes.CREATE3res {
 	defer nfs.recordOp(nfstypes.NFSPROC3_CREATE, time.Now())
 	var reply nfstypes.CREATE3res
@@ -454,6 +462,7 @@ func (nfs *Nfs) NFSPROC3_CREATE(args nfstypes.CREATE3args) nfstypes.CREATE3res {
 	return reply
 }
 
+// NFSPROC3_MKDIR implements the NFSv3 _MKDIR RPC.
 func (nfs *Nfs) NFSPROC3_MKDIR(args nfstypes.MKDIR3args) nfstypes.MKDIR3res {
 	defer nfs.recordOp(nfstypes.NFSPROC3_MKDIR, time.Now())
 	var reply nfstypes.MKDIR3res
@@ -474,6 +483,7 @@ func (nfs *Nfs) NFSPROC3_MKDIR(args nfstypes.MKDIR3args) nfstypes.MKDIR3res {
 	return reply
 }
 
+// NFSPROC3_SYMLINK implements the NFSv3 _SYMLINK RPC.
 func (nfs *Nfs) NFSPROC3_SYMLINK(args nfstypes.SYMLINK3args) nfstypes.SYMLINK3res {
 	var reply nfstypes.SYMLINK3res
 	util.DPrintf(1, "NFS SymLink %v\n", args)
@@ -495,6 +505,7 @@ func (nfs *Nfs) NFSPROC3_SYMLINK(args nfstypes.SYMLINK3args) nfstypes.SYMLINK3re
 	return reply
 }
 
+// NFSPROC3_READLINK implements the NFSv3 _READLINK RPC.
 func (nfs *Nfs) NFSPROC3_READLINK(args nfstypes.READLINK3args) nfstypes.READLINK3res {
 	var reply nfstypes.READLINK3res
 	util.DPrintf(1, "NFS ReadLink %v\n", args)
@@ -508,6 +519,7 @@ func (nfs *Nfs) NFSPROC3_READLINK(args nfstypes.READLINK3args) nfstypes.READLINK
 	return reply
 }
 
+// NFSPROC3_MKNOD implements the NFSv3 _MKNOD RPC.
 func (nfs *Nfs) NFSPROC3_MKNOD(args nfstypes.MKNOD3args) nfstypes.MKNOD3res {
 	var reply nfstypes.MKNOD3res
 	util.DPrintf(1, "NFS MakeNod %v\n", args)
@@ -542,6 +554,7 @@ func (nfs *Nfs) doRemove(dfh nfstypes.Nfs_fh3, name nfstypes.Filename3, isdir bo
 	return op, nfstypes.NFS3_OK
 }
 
+// NFSPROC3_REMOVE implements the NFSv3 _REMOVE RPC.
 func (nfs *Nfs) NFSPROC3_REMOVE(args nfstypes.REMOVE3args) nfstypes.REMOVE3res {
 	defer nfs.recordOp(nfstypes.NFSPROC3_REMOVE, time.Now())
 	var reply nfstypes.REMOVE3res
@@ -555,6 +568,7 @@ func (nfs *Nfs) NFSPROC3_REMOVE(args nfstypes.REMOVE3args) nfstypes.REMOVE3res {
 	return reply
 }
 
+// NFSPROC3_RMDIR implements the NFSv3 _RMDIR RPC.
 func (nfs *Nfs) NFSPROC3_RMDIR(args nfstypes.RMDIR3args) nfstypes.RMDIR3res {
 	defer nfs.recordOp(nfstypes.NFSPROC3_RMDIR, time.Now())
 	var reply nfstypes.RMDIR3res
@@ -599,6 +613,7 @@ func validateRename(op *fstxn.FsTxn, inodes []*inode.Inode, fromfh fh.Fh, tofh f
 	return true
 }
 
+// NFSPROC3_RENAME implements the NFSv3 _RENAME RPC.
 func (nfs *Nfs) NFSPROC3_RENAME(args nfstypes.RENAME3args) nfstypes.RENAME3res {
 	defer nfs.recordOp(nfstypes.NFSPROC3_RENAME, time.Now())
 	var reply nfstypes.RENAME3res
@@ -742,6 +757,7 @@ func (nfs *Nfs) NFSPROC3_RENAME(args nfstypes.RENAME3args) nfstypes.RENAME3res {
 	return reply
 }
 
+// NFSPROC3_LINK implements the NFSv3 _LINK RPC.
 func (nfs *Nfs) NFSPROC3_LINK(args nfstypes.LINK3args) nfstypes.LINK3res {
 	var reply nfstypes.LINK3res
 	util.DPrintf(1, "NFS Link %v\n", args)
@@ -751,6 +767,7 @@ func (nfs *Nfs) NFSPROC3_LINK(args nfstypes.LINK3args) nfstypes.LINK3res {
 	return reply
 }
 
+// NFSPROC3_READDIR implements the NFSv3 _READDIR RPC.
 func (nfs *Nfs) NFSPROC3_READDIR(args nfstypes.READDIR3args) nfstypes.READDIR3res {
 	var reply nfstypes.READDIR3res
 	util.DPrintf(1, "NFS ReadDir %v\n", args)
@@ -770,6 +787,7 @@ func (nfs *Nfs) NFSPROC3_READDIR(args nfstypes.READDIR3args) nfstypes.READDIR3re
 	return reply
 }
 
+// NFSPROC3_READDIRPLUS implements the NFSv3 _READDIRPLUS RPC.
 func (nfs *Nfs) NFSPROC3_READDIRPLUS(args nfstypes.READDIRPLUS3args) nfstypes.READDIRPLUS3res {
 	defer nfs.recordOp(nfstypes.NFSPROC3_READDIRPLUS, time.Now())
 	var reply nfstypes.READDIRPLUS3res
@@ -790,6 +808,7 @@ func (nfs *Nfs) NFSPROC3_READDIRPLUS(args nfstypes.READDIRPLUS3args) nfstypes.RE
 	return reply
 }
 
+// NFSPROC3_FSSTAT implements the NFSv3 _FSSTAT RPC.
 func (nfs *Nfs) NFSPROC3_FSSTAT(args nfstypes.FSSTAT3args) nfstypes.FSSTAT3res {
 	var reply nfstypes.FSSTAT3res
 	util.DPrintf(1, "NFS FsStat %v\n", args)
@@ -797,6 +816,7 @@ func (nfs *Nfs) NFSPROC3_FSSTAT(args nfstypes.FSSTAT3args) nfstypes.FSSTAT3res {
 	return reply
 }
 
+// NFSPROC3_FSINFO implements the NFSv3 _FSINFO RPC.
 func (nfs *Nfs) NFSPROC3_FSINFO(args nfstypes.FSINFO3args) nfstypes.FSINFO3res {
 	var reply nfstypes.FSINFO3res
 	util.DPrintf(1, "NFS FsInfo %v\n", args)
@@ -814,6 +834,7 @@ func (nfs *Nfs) NFSPROC3_FSINFO(args nfstypes.FSINFO3args) nfstypes.FSINFO3res {
 	return reply
 }
 
+// NFSPROC3_PATHCONF implements the NFSv3 _PATHCONF RPC.
 func (nfs *Nfs) NFSPROC3_PATHCONF(args nfstypes.PATHCONF3args) nfstypes.PATHCONF3res {
 	var reply nfstypes.PATHCONF3res
 	util.DPrintf(1, "NFS PathConf %v\n", args)
@@ -828,6 +849,7 @@ func (nfs *Nfs) NFSPROC3_PATHCONF(args nfstypes.PATHCONF3args) nfstypes.PATHCONF
 // RFC: forces or flushes data to stable storage that was previously
 // written with a WRITE procedure call with the stable field set to
 // UNSTABLE.
+// NFSPROC3_COMMIT implements the NFSv3 _COMMIT RPC.
 func (nfs *Nfs) NFSPROC3_COMMIT(args nfstypes.COMMIT3args) nfstypes.COMMIT3res {
 	defer nfs.recordOp(nfstypes.NFSPROC3_COMMIT, time.Now())
 	var reply nfstypes.COMMIT3res
