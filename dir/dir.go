@@ -120,13 +120,33 @@ const fattr3XDRsize uint64 = 4 + 4 + 4 + // type, mode, nlink
 	8 + 8 + // fsid, fileid
 	(3 * 8) // atime, mtime, ctime
 
-// best estimate of entryplus3 size, excluding name
+// best estimate of entryplus3 size, excluding the file name. This mirrors the
+// XDR layout of `entryplus3` in RFC 1813.
 const entryplus3Baggage uint64 = 8 + // fileid
 	4 + // name length
 	8 + // cookie
 	4 + fattr3XDRsize + // post_op_attr header + fattr3
 	16 + // name_handle
 	8 // pointer
+
+// readdirBase accounts for the fixed portion of a READDIR or READDIRPLUS reply
+// (directory attributes, cookie verifier, pointer to the first entry, and the
+// final EOF flag).
+const readdirBase uint64 = 88 + 8 + 4 + 4
+
+func pad4(n int) uint64 {
+	if n%4 == 0 {
+		return 0
+	}
+	return uint64(4 - (n % 4))
+}
+
+// dirEntrySize returns the number of bytes contributed by a single directory
+// entry in the XDR reply, excluding attributes or file handles.
+func dirEntrySize(name string) uint64 {
+	l := len(name)
+	return 8 + 4 + uint64(l) + pad4(l) + 8 + 4
+}
 
 // XXX inode locking order violated
 func Apply(dip *inode.Inode, op *fstxn.FsTxn, start uint64,
@@ -138,9 +158,11 @@ func Apply(dip *inode.Inode, op *fstxn.FsTxn, start uint64,
 	if begin != 0 {
 		begin += DIRENTSZ
 	}
-	// TODO: arbitrary estimate of constant XDR overhead
-	var n uint64 = uint64(64)
-	var dirbytes uint64 = uint64(0)
+	// Track the size of the XDR reply. Start with the fixed portion of the
+	// READDIRPLUS response as described in RFC 1813.
+	var n uint64 = readdirBase
+	// Size of the directory portion (fileid, name, cookie, and pointer).
+	var dirbytes uint64 = 0
 	for off := begin; off < dip.Size; {
 		data, _ := dip.Read(op.Atxn, off, DIRENTSZ)
 		de := decodeDirEnt(data)
@@ -168,10 +190,11 @@ func Apply(dip *inode.Inode, op *fstxn.FsTxn, start uint64,
 		}
 
 		off = off + DIRENTSZ
-		// TODO: unclear what dircount is supposed to included so we pad it with
-		// 8 bytes per entry
-		dirbytes += uint64(8 + len(de.name))
-		n += entryplus3Baggage + uint64(len(de.name))
+		// dircount only accounts for the directory entry portion
+		// (as returned by READDIR), while maxcount includes the full
+		// XDR reply with attributes and file handles.
+		dirbytes += dirEntrySize(de.name)
+		n += entryplus3Baggage + uint64(len(de.name)) + pad4(len(de.name))
 		if dirbytes >= dircount || n >= maxcount {
 			eof = false
 			break
@@ -187,9 +210,9 @@ func ApplyEnts(dip *inode.Inode, op *fstxn.FsTxn, start uint64, count uint64,
 	if begin != 0 {
 		begin += DIRENTSZ
 	}
-	// TODO: this is supposed to track the size of the XDR-encoded reply in
-	// bytes, and we somewhat arbitrarily use 64 as the constant overhead
-	var n uint64 = uint64(64)
+	// Track the encoded size of the READDIR reply. Start with the fixed
+	// portion of the response (attributes, cookie verifier, pointer, EOF).
+	var n uint64 = readdirBase
 	for off := begin; off < dip.Size; {
 		data, _ := dip.Read(op.Atxn, off, DIRENTSZ)
 		de := decodeDirEnt(data)
@@ -201,9 +224,8 @@ func ApplyEnts(dip *inode.Inode, op *fstxn.FsTxn, start uint64, count uint64,
 		f(de.name, de.inum, off)
 
 		off = off + DIRENTSZ
-		// TODO: estimate of XDR overhead, 16-byte file id, name, cookie, and
-		// pointer for linked list
-		n += uint64(16 + len(de.name) + 8 + 8)
+		// Each entry contributes its XDR-encoded directory fields.
+		n += dirEntrySize(de.name)
 		if n >= count {
 			eof = false
 			break
