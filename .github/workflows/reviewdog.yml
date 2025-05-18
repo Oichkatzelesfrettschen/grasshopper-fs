@@ -31,7 +31,11 @@ jobs:
         sudo apt-get update -y
         sudo apt-get install -y shellcheck
     - name: Run ${{ matrix.linter.id }} & feed Reviewdog
+
       uses: reviewdog/reviewdog@v0.17.4
+
+      uses: reviewdog/reviewdog@master
+
       with:
         name: ${{ matrix.linter.id }}
         reporter: github-pr-check
