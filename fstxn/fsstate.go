@@ -6,6 +6,7 @@ import (
 	"github.com/mit-pdos/go-journal/lockmap"
 	"github.com/mit-pdos/go-journal/obj"
 	"github.com/mit-pdos/go-nfsd/cache"
+	"github.com/mit-pdos/go-nfsd/inode"
 	"github.com/mit-pdos/go-nfsd/super"
 )
 
@@ -14,7 +15,7 @@ const ICACHESZ uint64 = 100
 type FsState struct {
 	Super   *super.FsSuper
 	Txn     *obj.Log
-	Icache  *cache.Cache
+	Icache  *cache.Cache[*inode.Inode]
 	Lockmap *lockmap.LockMap
 	Balloc  *alloc.Alloc
 	Ialloc  *alloc.Alloc
@@ -34,7 +35,7 @@ func MkFsState(super *super.FsSuper, log *obj.Log) *FsState {
 		super.NBlockBitmap))
 	ialloc := alloc.MkAlloc(readBitmap(super, super.BitmapInodeStart(),
 		super.NInodeBitmap))
-	icache := cache.MkCache(ICACHESZ)
+	icache := cache.MkCache[*inode.Inode](ICACHESZ)
 	st := &FsState{
 		Super:   super,
 		Txn:     log,
