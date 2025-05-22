@@ -1,15 +1,44 @@
 #!/usr/bin/env bash
 set -euo pipefail
+
+# log file for any installation failures
+LOG_FILE=/tmp/setup-failures.log
+echo "" > "$LOG_FILE"
+
+# attempt a pip install fallback when apt packages fail, if applicable
+apt_pip_fallback() {
+  pkg="$1"
+  if [[ "$pkg" == python3-* ]]; then
+    pip_pkg="${pkg#python3-}"
+    if ! pip3 install --no-cache-dir "$pip_pkg" >/dev/null 2>&1; then
+      echo "PIP fallback failed: $pip_pkg" >> "$LOG_FILE"
+    fi
+  fi
+}
+
+# helper to install python packages with failure logging
+pip_install() {
+  pkg="$1"
+  if ! pip3 install --no-cache-dir "$pkg" >/dev/null 2>&1; then
+    echo "PIP install failed: $pkg" >> "$LOG_FILE"
+  fi
+}
 export DEBIAN_FRONTEND=noninteractive
 
 # helper to pin to the repo's exact version if it exists
-apt_pin_install(){
+apt_pin_install() {
   pkg="$1"
   ver=$(apt-cache show "$pkg" 2>/dev/null | awk '/^Version:/{print $2; exit}')
   if [ -n "$ver" ]; then
-    apt-get install -y "${pkg}=${ver}"
+    if ! apt-get install -y "${pkg}=${ver}" >/dev/null 2>&1; then
+      echo "APT install failed: $pkg" >> "$LOG_FILE"
+      apt_pip_fallback "$pkg"
+    fi
   else
-    apt-get install -y "$pkg"
+    if ! apt-get install -y "$pkg" >/dev/null 2>&1; then
+      echo "APT install failed: $pkg" >> "$LOG_FILE"
+      apt_pip_fallback "$pkg"
+    fi
   fi
 }
 
@@ -18,7 +47,7 @@ for arch in i386 armel armhf arm64 riscv64 powerpc ppc64el ia64; do
   dpkg --add-architecture "$arch"
 done
 
-apt-get update -y
+apt-get update -y || echo "APT update failed" >> "$LOG_FILE"
 
 # core build tools, formatters, analysis, science libs
 for pkg in \
@@ -44,9 +73,11 @@ for pkg in \
   apt_pin_install "$pkg"
 done
 
-pip3 install --no-cache-dir \
+for pkg in \
   tensorflow-cpu jax jaxlib \
-  tensorflow-model-optimization mlflow onnxruntime-tools
+  tensorflow-model-optimization mlflow onnxruntime-tools; do
+  pip_install "$pkg"
+done
 
 # QEMU emulation for foreign binaries
 for pkg in \
@@ -119,15 +150,20 @@ done
 
 # IA-16 (8086/286) cross-compiler
 IA16_VER=$(curl -fsSL https://api.github.com/repos/tkchia/gcc-ia16/releases/latest | awk -F\" '/tag_name/{print $4; exit}')
-curl -fsSL "https://github.com/tkchia/gcc-ia16/releases/download/${IA16_VER}/ia16-elf-gcc-linux64.tar.xz" | tar -Jx -C /opt
+if [ -z "$IA16_VER" ] || ! curl -fsSL "https://github.com/tkchia/gcc-ia16/releases/download/${IA16_VER}/ia16-elf-gcc-linux64.tar.xz" | tar -Jx -C /opt; then
+  echo "IA16 toolchain install failed" >> "$LOG_FILE"
+fi
 echo 'export PATH=/opt/ia16-elf-gcc/bin:$PATH' > /etc/profile.d/ia16.sh
 export PATH=/opt/ia16-elf-gcc/bin:$PATH
 
 # protoc installer (pinned)
 PROTO_VERSION=25.1
-curl -fsSL "https://raw.githubusercontent.com/protocolbuffers/protobuf/v${PROTO_VERSION}/protoc-${PROTO_VERSION}-linux-x86_64.zip" -o /tmp/protoc.zip
-unzip -d /usr/local /tmp/protoc.zip
-rm /tmp/protoc.zip
+if ! curl -fsSL "https://raw.githubusercontent.com/protocolbuffers/protobuf/v${PROTO_VERSION}/protoc-${PROTO_VERSION}-linux-x86_64.zip" -o /tmp/protoc.zip; then
+  echo "protoc download failed" >> "$LOG_FILE"
+else
+  unzip -d /usr/local /tmp/protoc.zip >/dev/null 2>&1 || echo "protoc unzip failed" >> "$LOG_FILE"
+  rm /tmp/protoc.zip
+fi
 
 # gmake alias
 command -v gmake >/dev/null 2>&1 || ln -s "$(command -v make)" /usr/local/bin/gmake
@@ -135,22 +171,36 @@ command -v gmake >/dev/null 2>&1 || ln -s "$(command -v make)" /usr/local/bin/gm
 # Install Go 1.23 or newer
 GO_VERSION=1.23.8
 ARCH=$(uname -m)
-curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${ARCH}.tar.gz" -o /tmp/go.tgz
-rm -rf /usr/local/go && tar -C /usr/local -xzf /tmp/go.tgz
+if ! curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${ARCH}.tar.gz" -o /tmp/go.tgz; then
+  echo "Go download failed" >> "$LOG_FILE"
+else
+  rm -rf /usr/local/go && tar -C /usr/local -xzf /tmp/go.tgz || echo "Go extract failed" >> "$LOG_FILE"
+fi
 export PATH="/usr/local/go/bin:$PATH"
 echo 'export PATH=/usr/local/go/bin:$PATH' > /etc/profile.d/go.sh
 
 # Python environment for repo
 python3 -m venv /opt/go-nfsd-venv
 source /opt/go-nfsd-venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-pip install pytest pytest-xdist pexpect
+if ! pip install --upgrade pip >/dev/null 2>&1; then
+  echo "PIP upgrade failed" >> "$LOG_FILE"
+fi
+if ! pip install -r requirements.txt >/dev/null 2>&1; then
+  echo "PIP install failed: requirements.txt" >> "$LOG_FILE"
+fi
+for pkg in pytest pytest-xdist pexpect; do
+  pip_install "$pkg"
+done
 
 deactivate
 
 # clean up
 apt-get clean
 rm -rf /var/lib/apt/lists/*
+
+if [ -s "$LOG_FILE" ]; then
+  echo "Some packages failed to install. See $LOG_FILE for details." >&2
+  cat "$LOG_FILE" >&2
+fi
 
 exit 0
