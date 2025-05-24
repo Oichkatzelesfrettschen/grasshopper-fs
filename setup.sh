@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ensure we run from the repository root
+cd "$(dirname "$(readlink -f "$0")")"
+
 # log file for any installation failures
 LOG_FILE=/tmp/setup-failures.log
 echo "" > "$LOG_FILE"
@@ -178,6 +181,14 @@ else
 fi
 export PATH="/usr/local/go/bin:$PATH"
 echo 'export PATH=/usr/local/go/bin:$PATH' > /etc/profile.d/go.sh
+
+# Fetch Go modules so offline commands succeed
+if ! go mod download >/dev/null 2>&1; then
+  echo "Go mod download failed" >> "$LOG_FILE"
+fi
+if ! go mod vendor >/dev/null 2>&1; then
+  echo "Go mod vendor failed" >> "$LOG_FILE"
+fi
 
 # Python environment for repo
 python3 -m venv /opt/go-nfsd-venv
