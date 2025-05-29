@@ -18,11 +18,13 @@ type dirEnt struct {
 	name string // <= MAXNAMELEN
 }
 
+// IllegalName reports whether name is "." or "..".
 func IllegalName(name nfstypes.Filename3) bool {
 	n := name
 	return n == "." || n == ".."
 }
 
+// ScanName searches dip for name without using the directory cache.
 func ScanName(dip *inode.Inode, op *fstxn.FsTxn, name nfstypes.Filename3) (common.Inum, uint64) {
 	if dip.Kind != nfstypes.NF3DIR {
 		return common.NULLINUM, 0
@@ -47,6 +49,7 @@ func ScanName(dip *inode.Inode, op *fstxn.FsTxn, name nfstypes.Filename3) (commo
 	return inum, finalOffset
 }
 
+// AddNameDir writes a directory entry directly to dip at or after lastoff.
 func AddNameDir(dip *inode.Inode, op *fstxn.FsTxn, inum common.Inum,
 	name nfstypes.Filename3, lastoff uint64) (uint64, bool) {
 	var finalOff uint64
@@ -69,6 +72,7 @@ func AddNameDir(dip *inode.Inode, op *fstxn.FsTxn, inum common.Inum,
 	return finalOff, n == DIRENTSZ
 }
 
+// RemNameDir removes a directory entry for name from dip.
 func RemNameDir(dip *inode.Inode, op *fstxn.FsTxn, name nfstypes.Filename3) (uint64, bool) {
 	inum, off := LookupName(dip, op, name)
 	if inum == common.NULLINUM {
@@ -81,6 +85,7 @@ func RemNameDir(dip *inode.Inode, op *fstxn.FsTxn, name nfstypes.Filename3) (uin
 	return off, n == DIRENTSZ
 }
 
+// IsDirEmpty reports whether dip contains only "." and "..".
 func IsDirEmpty(dip *inode.Inode, op *fstxn.FsTxn) bool {
 	var empty bool = true
 
@@ -99,6 +104,7 @@ func IsDirEmpty(dip *inode.Inode, op *fstxn.FsTxn) bool {
 	return empty
 }
 
+// InitDir initializes dip as a directory with entries for "." and its parent.
 func InitDir(dip *inode.Inode, op *fstxn.FsTxn, parent common.Inum) bool {
 	if !AddName(dip, op, dip.Inum, ".") {
 		return false
@@ -106,6 +112,7 @@ func InitDir(dip *inode.Inode, op *fstxn.FsTxn, parent common.Inum) bool {
 	return AddName(dip, op, parent, "..")
 }
 
+// MkRootDir initializes dip as the filesystem root directory.
 func MkRootDir(dip *inode.Inode, op *fstxn.FsTxn) bool {
 	if !AddName(dip, op, dip.Inum, ".") {
 		return false
@@ -148,6 +155,7 @@ func dirEntrySize(name string) uint64 {
 	return 8 + 4 + uint64(l) + pad4(l) + 8 + 4
 }
 
+// Apply iterates over directory entries starting at start and invokes f for each.
 // XXX inode locking order violated
 func Apply(dip *inode.Inode, op *fstxn.FsTxn, start uint64,
 	dircount uint64, maxcount uint64,
@@ -203,6 +211,7 @@ func Apply(dip *inode.Inode, op *fstxn.FsTxn, start uint64,
 	return eof
 }
 
+// ApplyEnts enumerates directory entries without looking up inodes.
 func ApplyEnts(dip *inode.Inode, op *fstxn.FsTxn, start uint64, count uint64,
 	f func(string, common.Inum, uint64)) bool {
 	var eof bool = true

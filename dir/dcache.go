@@ -16,6 +16,7 @@ func mkDcache(dip *inode.Inode, op *fstxn.FsTxn) {
 		})
 }
 
+// LookupName looks up a name in dip using the directory cache.
 func LookupName(dip *inode.Inode, op *fstxn.FsTxn, name nfstypes.Filename3) (common.Inum, uint64) {
 	if dip.Kind != nfstypes.NF3DIR {
 		return common.NULLINUM, 0
@@ -33,6 +34,7 @@ func LookupName(dip *inode.Inode, op *fstxn.FsTxn, name nfstypes.Filename3) (com
 	return inum, finalOffset
 }
 
+// AddName adds a name to dip and updates the directory cache.
 func AddName(dip *inode.Inode, op *fstxn.FsTxn, inum common.Inum, name nfstypes.Filename3) bool {
 	if dip.Kind != nfstypes.NF3DIR || uint64(len(name)) >= MAXNAMELEN {
 		return false
@@ -48,6 +50,7 @@ func AddName(dip *inode.Inode, op *fstxn.FsTxn, inum common.Inum, name nfstypes.
 	return ok
 }
 
+// RemName removes a name from dip and updates the directory cache.
 func RemName(dip *inode.Inode, op *fstxn.FsTxn, name nfstypes.Filename3) bool {
 	if dip.Kind != nfstypes.NF3DIR || uint64(len(name)) >= MAXNAMELEN {
 		return false
