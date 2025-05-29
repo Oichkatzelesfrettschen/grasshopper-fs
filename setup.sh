@@ -179,8 +179,8 @@ if ! curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${ARCH}.tar.gz" -o /tmp
 else
   rm -rf /usr/local/go && tar -C /usr/local -xzf /tmp/go.tgz || echo "Go extract failed" >> "$LOG_FILE"
 fi
-export PATH="/usr/local/go/bin:$PATH"
-echo 'export PATH=/usr/local/go/bin:$PATH' > /etc/profile.d/go.sh
+export PATH="/usr/local/go/bin:$HOME/go/bin:$PATH"
+echo 'export PATH=$HOME/go/bin:/usr/local/go/bin:$PATH' > /etc/profile.d/go.sh
 
 # Fetch Go modules so offline commands succeed
 if ! go mod download >/dev/null 2>&1; then
@@ -189,6 +189,21 @@ fi
 if ! go mod vendor >/dev/null 2>&1; then
   echo "Go mod vendor failed" >> "$LOG_FILE"
 fi
+# Install Go tooling for linting, debugging, and fuzzing
+GO_TOOLS=(
+  golang.org/x/tools/cmd/goimports
+  honnef.co/go/tools/cmd/staticcheck
+  github.com/golangci/golangci-lint/cmd/golangci-lint
+  github.com/go-delve/delve/cmd/dlv
+  github.com/google/pprof
+  github.com/google/gofuzz
+)
+for tool in "${GO_TOOLS[@]}"; do
+  if ! GO111MODULE=on go install "$tool@latest" >/dev/null 2>&1; then
+    echo "Go install failed: $tool" >> "$LOG_FILE"
+  fi
+done
+
 
 # Python environment for repo
 python3 -m venv /opt/go-nfsd-venv
